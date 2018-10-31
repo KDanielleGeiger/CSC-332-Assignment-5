@@ -8,14 +8,19 @@ values, startTimes, endTimes, clearBtns = [], [], [], []
 
 def main():
     window = Tk()
-    window.geometry("1000x600")
+    window.geometry("1000x700")
     window.title("Earning Maximization Problem")
 
     ##  Place add task button in its initial position
     addTaskBtn = Button(window, text='+ Add Task', fg='blue', activeforeground='blue',
                         cursor='hand2', bd=0, relief=FLAT)
     addTaskBtn.config(command=partial(addTask, window, addTaskBtn))
-    addTaskBtn.grid(row=35, column=1, pady=(0,10), sticky=W)
+    addTaskBtn.grid(row=39, column=1, pady=(2,0), sticky=W)
+
+    ##  Button to submit all input
+    submitBtn = Button(window, text='Submit', cursor='hand2')
+    submitBtn.config(command = partial(submit))
+    submitBtn.grid(row=39, column=2, pady=(2,0), sticky=E)
 
     ##  Create arrays to store Entry objects and add first task entry to UI
     addTask(window, addTaskBtn)
@@ -104,6 +109,79 @@ def onClear(i):
     
     endTimes[i].delete(0, END)
     onFocusOut(endTimes[i], 'E', None)
+
+##  Calls functions to check entries, run the algorithm, and display output
+def submit():
+    valid, err, index = checkEntries()
+    if valid == False:
+        print(err, index)
+
+##  For each task, check that:
+##  All fields are filled out (or all are blank)
+##  The earnings entry is a float value >= 0
+##  Start time is an integer between 0 and 11
+##  End time is an integer between 1 and 12
+##  Start time is less than end time
+def checkEntries():
+    disallowedStrings = [valueText, startTimeText, endTimeText, '']
+    numTasks = len(values)
+    valid = True
+    err = ''
+    index = None
+
+    for i in range(0, numTasks):
+        index = i
+        value = values[i].get()
+        startTime = startTimes[i].get()
+        endTime = endTimes[i].get()
+
+        ##  Make sure all fields are filled out
+        for j in [value, startTime, endTime]:
+            if j in disallowedStrings:
+                valid = False
+                err = 'ERROR: Field(s) left blank.'
+                return valid, err, index
+
+        ##  Check the earnings entry
+        try:
+            if float(value) < 0:
+                valid = False
+                err = 'ERROR: Earnings must be a positive value.'
+                return valid, err, index
+        except:
+            valid = False
+            err = 'ERROR: Earnings must be a float value.'
+            return valid, err, index
+
+        ##  Check the startTime entry
+        try:
+            if int(startTime) not in range(0, 12):
+                valid = False
+                err = 'ERROR: Start Time must be between 0 and 11'
+                return valid, err, index
+        except:
+            valid = False
+            err = 'ERROR: Start Time must be an int between 0 and 11'
+            return valid, err, index
+        
+        ##  Check the endTime entry
+        try:
+            if int(endTime) not in range(1, 13):
+                valid = False
+                err = 'ERROR: End Time must be between 1 and 12'
+                return valid, err, index
+        except:
+            valid = False
+            err = 'ERROR: End Time must be an int between 1 and 12'
+            return valid, err, index
+
+        ##  Check that startTime < endTime
+        if not startTime < endTime:
+            valid = False
+            err = 'ERROR: Start Time must be less than End Time'
+            return valid, err, index
+        
+    return valid, err, index
             
 if __name__ == "__main__":
     main()
