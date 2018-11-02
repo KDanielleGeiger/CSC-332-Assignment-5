@@ -4,7 +4,7 @@ from functools import partial
 valueText = 'Earnings (Ex: 21.50)'
 startTimeText = 'Start Time (Int 0-11)'
 endTimeText = 'End Time (Int 1-12)'
-values, startTimes, endTimes, clearBtns = [], [], [], []
+labels, values, startTimes, endTimes, clearBtns = [], [], [], [], []
 
 def main():
     window = Tk()
@@ -17,9 +17,14 @@ def main():
     addTaskBtn.config(command=partial(addTask, window, addTaskBtn))
     addTaskBtn.grid(row=39, column=1, pady=(2,0), sticky=W)
 
+    ##  Button to reset input
+    resetBtn = Button(window, text='Reset', cursor='hand2', width=6)
+    resetBtn.config(command=onReset)
+    resetBtn.grid(row=39, column=2, padx=(20,0), pady=(2,0), sticky=W)
+
     ##  Button to submit all input
-    submitBtn = Button(window, text='Submit', cursor='hand2')
-    submitBtn.config(command = partial(submit))
+    submitBtn = Button(window, text='Submit', cursor='hand2', width=6)
+    submitBtn.config(command=submit)
     submitBtn.grid(row=39, column=2, pady=(2,0), sticky=E)
 
     ##  Create arrays to store Entry objects and add first task entry to UI
@@ -68,7 +73,7 @@ def addTask(window, addTaskBtn):
     ##  Create button to clear this task's entry fields
     clear = Button(window, text='x', fg='light gray', activeforeground='light gray',
                    cursor='hand2', bd=0, relief=FLAT)
-    clear.config(command=partial(onClear, i))
+    clear.config(command=partial(onClear, i, False))
     clear.grid(row=(4*i)+1, column=3, pady=(5,0), padx=(5,0))
 
     ##  Force FocusIn on valueEntry when user adds a task
@@ -76,6 +81,7 @@ def addTask(window, addTaskBtn):
         valueEntry.focus_force()
 
     ##  Add the newly created objects to lists for later access
+    labels.append(label)
     values.append(valueEntry)
     startTimes.append(startTimeEntry)
     endTimes.append(endTimeEntry)
@@ -100,9 +106,11 @@ def onFocusOut(entry, entryType, e):
         entry.config(fg='light grey')
 
 ##  Clear all entry fields for a task
-def onClear(i):
+def onClear(i, reset):
     values[i].delete(0, END)
-    values[i].focus_force()
+    values[i].insert(0, valueText)
+    if reset == False:
+        values[i].focus_force()
     
     startTimes[i].delete(0, END)
     onFocusOut(startTimes[i], 'S', None)
@@ -110,11 +118,27 @@ def onClear(i):
     endTimes[i].delete(0, END)
     onFocusOut(endTimes[i], 'E', None)
 
-##  Calls functions to check entries, run the algorithm, and display output
-def submit():
-    valid, err, index = checkEntries()
-    if valid == False:
-        print(err, index)
+##  Reset all user input
+def onReset():
+    ##  Remove all task entry fields except for the first task
+    if len(values) > 1:
+        for i in range(len(values) - 1, 0, -1):
+            onClear(i, True)
+
+            labels[i].destroy()
+            values[i].destroy()
+            startTimes[i].destroy()
+            endTimes[i].destroy()
+            clearBtns[i].destroy()
+
+            labels.pop()
+            values.pop()
+            startTimes.pop()
+            endTimes.pop()
+            clearBtns.pop()
+
+    ##  Clear the first task's entry fields
+    onClear(0, True)
 
 ##  For each task, check that:
 ##  All fields are filled out (or all are blank)
@@ -182,6 +206,12 @@ def checkEntries():
             return valid, err, index
         
     return valid, err, index
+
+##  Calls functions to check entries, run the algorithm, and display output
+def submit():
+    valid, err, index = checkEntries()
+    if valid == False:
+        print(err, index)
             
 if __name__ == "__main__":
     main()
