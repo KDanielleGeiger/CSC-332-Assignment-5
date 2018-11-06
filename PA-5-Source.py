@@ -5,6 +5,7 @@ valueText = 'Earnings (Ex: 21.50)'
 startTimeText = 'Start Time (Int 0-11)'
 endTimeText = 'End Time (Int 1-12)'
 labels, values, startTimes, endTimes, clearBtns = [], [], [], [], []
+errorLbl = None
 
 def main():
     window = Tk()
@@ -19,12 +20,12 @@ def main():
 
     ##  Button to reset input
     resetBtn = Button(window, text='Reset', cursor='hand2', width=6)
-    resetBtn.config(command=onReset)
+    resetBtn.config(command=partial(onReset, addTaskBtn))
     resetBtn.grid(row=39, column=2, padx=(20,0), pady=(2,0), sticky=W)
 
     ##  Button to submit all input
     submitBtn = Button(window, text='Submit', cursor='hand2', width=6)
-    submitBtn.config(command=submit)
+    submitBtn.config(command=partial(submit, window))
     submitBtn.grid(row=39, column=2, pady=(2,0), sticky=E)
 
     ##  Create arrays to store Entry objects and add first task entry to UI
@@ -73,7 +74,7 @@ def addTask(window, addTaskBtn):
     ##  Create button to clear this task's entry fields
     clear = Button(window, text='x', fg='light gray', activeforeground='light gray',
                    cursor='hand2', bd=0, relief=FLAT)
-    clear.config(command=partial(onClear, i, False))
+    clear.config(command=partial(onClear, i))
     clear.grid(row=(4*i)+1, column=3, pady=(5,0), padx=(5,0))
 
     ##  Force FocusIn on valueEntry when user adds a task
@@ -106,11 +107,9 @@ def onFocusOut(entry, entryType, e):
         entry.config(fg='light grey')
 
 ##  Clear all entry fields for a task
-def onClear(i, reset):
+def onClear(i):
     values[i].delete(0, END)
-    values[i].insert(0, valueText)
-    if reset == False:
-        values[i].focus_force()
+    values[i].focus_force()
     
     startTimes[i].delete(0, END)
     onFocusOut(startTimes[i], 'S', None)
@@ -119,11 +118,11 @@ def onClear(i, reset):
     onFocusOut(endTimes[i], 'E', None)
 
 ##  Reset all user input
-def onReset():
+def onReset(addTaskBtn):
     ##  Remove all task entry fields except for the first task
     if len(values) > 1:
         for i in range(len(values) - 1, 0, -1):
-            onClear(i, True)
+            onClear(i)
 
             labels[i].destroy()
             values[i].destroy()
@@ -138,7 +137,14 @@ def onReset():
             clearBtns.pop()
 
     ##  Clear the first task's entry fields
-    onClear(0, True)
+    onClear(0)
+
+    ##  Remove error message if there is one
+    if errorLbl is not None:
+        errorLbl.destroy()
+
+    ##  Replace the add task button
+    addTaskBtn.grid(row=39, column=1, pady=(2,0), sticky=W)
 
 ##  For each task, check that:
 ##  All fields are filled out (or all are blank)
@@ -181,22 +187,22 @@ def checkEntries():
         try:
             if int(startTime) not in range(0, 12):
                 valid = False
-                err = 'ERROR: Start Time must be between 0 and 11'
+                err = 'ERROR: Start Time must be between 0 - 11'
                 return valid, err, index
         except:
             valid = False
-            err = 'ERROR: Start Time must be an int between 0 and 11'
+            err = 'ERROR: Start Time must be an int between 0 - 11'
             return valid, err, index
         
         ##  Check the endTime entry
         try:
             if int(endTime) not in range(1, 13):
                 valid = False
-                err = 'ERROR: End Time must be between 1 and 12'
+                err = 'ERROR: End Time must be between 1 - 12'
                 return valid, err, index
         except:
             valid = False
-            err = 'ERROR: End Time must be an int between 1 and 12'
+            err = 'ERROR: End Time must be an int between 1 - 12'
             return valid, err, index
 
         ##  Check that startTime < endTime
@@ -207,11 +213,25 @@ def checkEntries():
         
     return valid, err, index
 
-##  Calls functions to check entries, run the algorithm, and display output
-def submit():
-    valid, err, index = checkEntries()
+##  If there is an error, display it under the appropriate task entry
+def displayError(window, valid, err, index):
+    global errorLbl
+    
+    if errorLbl is not None:
+        errorLbl.destroy()
+
     if valid == False:
-        print(err, index)
-            
+        errVar = StringVar()
+        errVar.set(err)
+
+        errorLbl = Label(window, textvariable=errVar, fg='red')
+        errorLbl.grid(row=(4*index)+2, column=1, columnspan=3)
+
+##  Calls functions to check entries, run the algorithm, and display output
+def submit(window):
+    ##  Check entries
+    valid, err, index = checkEntries()
+    displayError(window, valid, err, index)
+
 if __name__ == "__main__":
     main()
