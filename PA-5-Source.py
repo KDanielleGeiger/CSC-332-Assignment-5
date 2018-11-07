@@ -1,3 +1,4 @@
+import tkinter.ttk
 from tkinter import *
 from functools import partial
 
@@ -9,33 +10,47 @@ errorLbl = None
 
 def main():
     window = Tk()
-    window.geometry("1000x700")
+    window.geometry("1000x640")
     window.title("Earning Maximization Problem")
+    window.grid_rowconfigure(0, weight=1)
+
+    ##  Create frames
+    frameLeft = Frame(window)
+    frameLeft.grid(row=0, column=0, sticky=NS)
+    frameMid = Frame(window)
+    frameMid.grid(row=0, column=1, sticky=NS)
+    frameMid.rowconfigure(0, weight=1)
+    frameRight = Frame(window)
+    frameRight.grid(row=0, column=2, sticky=NS)
 
     ##  Place add task button in its initial position
-    addTaskBtn = Button(window, text='+ Add Task', fg='blue', activeforeground='blue',
+    addTaskBtn = Button(frameLeft, text='+ Add Task', fg='blue', activeforeground='blue',
                         cursor='hand2', bd=0, relief=FLAT)
-    addTaskBtn.config(command=partial(addTask, window, addTaskBtn))
+    addTaskBtn.config(command=partial(addTask, frameLeft, addTaskBtn))
     addTaskBtn.grid(row=39, column=1, pady=(2,0), sticky=W)
 
     ##  Button to reset input
-    resetBtn = Button(window, text='Reset', cursor='hand2', width=6)
+    resetBtn = Button(frameLeft, text='Reset', cursor='hand2', width=6)
     resetBtn.config(command=partial(onReset, addTaskBtn))
     resetBtn.grid(row=39, column=2, padx=(20,0), pady=(2,0), sticky=W)
 
     ##  Button to submit all input
-    submitBtn = Button(window, text='Submit', cursor='hand2', width=6)
-    submitBtn.config(command=partial(submit, window))
+    submitBtn = Button(frameLeft, text='Submit', cursor='hand2', width=6)
+    submitBtn.config(command=partial(submit, frameLeft))
     submitBtn.grid(row=39, column=2, pady=(2,0), sticky=E)
 
     ##  Create arrays to store Entry objects and add first task entry to UI
-    addTask(window, addTaskBtn)
+    addTask(frameLeft, addTaskBtn)
+
+    ##  Divider
+    sep = ttk.Separator(frameMid, orient=VERTICAL)
+    sep.grid(row=0, column=0, pady=(20,20), padx=(100,100), sticky=NS)
 
     ##  Continue to display UI until user exits
     window.mainloop()
 
 ##  Add entry fields for another task to the interface
-def addTask(window, addTaskBtn):
+def addTask(frameLeft, addTaskBtn):
     ##  The current number of task entries
     i = len(values)
 
@@ -49,30 +64,30 @@ def addTask(window, addTaskBtn):
     textVar.set(text)
 
     ##  Display new task number
-    label = Label(window, textvariable=textVar, width=10)
+    label = Label(frameLeft, textvariable=textVar, width=10)
     label.grid(row=4*i, column=0, pady=(10,0), padx=(10,0))
 
     ##  Display the three entry fields for new task
-    valueEntry = Entry(window, fg='light grey', relief=FLAT, width=20)
+    valueEntry = Entry(frameLeft, fg='light grey', relief=FLAT, width=20)
     valueEntry.grid(row=4*i, column=1, pady=(10,0))
     valueEntry.insert(0, valueText)
     valueEntry.bind('<FocusIn>', partial(onFocusIn, valueEntry))
     valueEntry.bind('<FocusOut>', partial(onFocusOut, valueEntry, 'V'))
 
-    startTimeEntry = Entry(window, fg='light grey', relief=FLAT, width=20)
+    startTimeEntry = Entry(frameLeft, fg='light grey', relief=FLAT, width=20)
     startTimeEntry.grid(row=(4*i)+1, column=1, pady=(5,0))
     startTimeEntry.insert(0, startTimeText)
     startTimeEntry.bind('<FocusIn>', partial(onFocusIn, startTimeEntry))
     startTimeEntry.bind('<FocusOut>', partial(onFocusOut, startTimeEntry, 'S'))
 
-    endTimeEntry = Entry(window, fg='light grey', relief=FLAT, width=20)
+    endTimeEntry = Entry(frameLeft, fg='light grey', relief=FLAT, width=20)
     endTimeEntry.grid(row=(4*i)+1, column=2, pady=(5,0), padx=(5,0))
     endTimeEntry.insert(0, endTimeText)
     endTimeEntry.bind('<FocusIn>', partial(onFocusIn, endTimeEntry))
     endTimeEntry.bind('<FocusOut>', partial(onFocusOut, endTimeEntry, 'E'))
 
     ##  Create button to clear this task's entry fields
-    clear = Button(window, text='x', fg='light gray', activeforeground='light gray',
+    clear = Button(frameLeft, text='x', fg='light gray', activeforeground='light gray',
                    cursor='hand2', bd=0, relief=FLAT)
     clear.config(command=partial(onClear, i))
     clear.grid(row=(4*i)+1, column=3, pady=(5,0), padx=(5,0))
@@ -214,7 +229,7 @@ def checkEntries():
     return valid, err, index
 
 ##  If there is an error, display it under the appropriate task entry
-def displayError(window, valid, err, index):
+def displayError(frameLeft, valid, err, index):
     global errorLbl
     
     if errorLbl is not None:
@@ -224,16 +239,16 @@ def displayError(window, valid, err, index):
         errVar = StringVar()
         errVar.set(err)
 
-        errorLbl = Label(window, textvariable=errVar, fg='red')
+        errorLbl = Label(frameLeft, textvariable=errVar, fg='red')
         errorLbl.grid(row=(4*index)+2, column=1, columnspan=3)
 
 class Task:
     "Represents each task as a single object."
 
     def __init__(self, startTime, endTime, value):
-##      This is intended to raise ValueError if these conversions fail.
-##      DO NOT catch it here. Validate these in the UI so you can
-##      communicate the problem to the user.
+        ##  This is intended to raise ValueError if these conversions fail.
+        ##  DO NOT catch it here. Validate these in the UI so you can
+        ##  communicate the problem to the user.
         self.startTime = int(startTime)
         self.endTime = int(endTime)
         self.value = int(value)
@@ -251,7 +266,7 @@ def inputsToObjects():
         )
 
     objects = [Task(*x) for x in rawData]
-##  Tasks must be sorted by endTime
+    ##  Tasks must be sorted by endTime
     objects.sort(key=lambda x: x.endTime)
     return objects
 
@@ -292,12 +307,12 @@ def maximizeEarnings(tasks, i=None):
         print()
 
 ##  Calls functions to check entries, run the algorithm, and display output
-def submit(window):
+def submit(frameLeft):
     ##  Check entries
     valid, err, index = checkEntries()
-    displayError(window, valid, err, index)
+    displayError(frameLeft, valid, err, index)
 
-##  Turn data into objects to make it easier to work with.
+    ##  Turn data into objects to make it easier to work with.
     maximizeEarnings(inputsToObjects())
 
 if __name__ == "__main__":
