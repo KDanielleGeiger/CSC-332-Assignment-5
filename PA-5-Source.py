@@ -227,11 +227,47 @@ def displayError(window, valid, err, index):
         errorLbl = Label(window, textvariable=errVar, fg='red')
         errorLbl.grid(row=(4*index)+2, column=1, columnspan=3)
 
+class Task:
+    "Represents each task as a single object."
+
+    def __init__(self, startTime, endTime, value):
+##      This is intended to raise ValueError if these conversions fail.
+##      DO NOT catch it here. Validate these in the UI so you can
+##      communicate the problem to the user.
+        self.startTime = int(startTime)
+        self.endTime = int(endTime)
+        self.value = int(value)
+            
+
+    def __repr__(self):
+        return "Task(startTime={}, endTime={}, value={})".format(self.startTime, self.endTime, self.value)
+
+def inputsToObjects():
+    "Convert data from UI into Task objects."
+    rawData = zip(
+        (x.get() for x in values), 
+        (x.get() for x in startTimes),
+        (x.get() for x in endTimes)
+        )
+
+    objects = [Task(*x) for x in rawData]
+##  Tasks must be sorted by value.
+    objects.sort(key=lambda x: x.value)
+    return objects
+
+
+##  This is a stub.
+def maximizeEarnings(data):
+    print(data)
+
 ##  Calls functions to check entries, run the algorithm, and display output
 def submit(window):
     ##  Check entries
     valid, err, index = checkEntries()
     displayError(window, valid, err, index)
+
+##  Turn data into objects to make it easier to work with.
+    maximizeEarnings(inputsToObjects())
 
 if __name__ == "__main__":
     main()
