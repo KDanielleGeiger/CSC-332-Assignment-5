@@ -245,20 +245,51 @@ class Task:
 def inputsToObjects():
     "Convert data from UI into Task objects."
     rawData = zip(
-        (x.get() for x in values), 
         (x.get() for x in startTimes),
-        (x.get() for x in endTimes)
+        (x.get() for x in endTimes),
+        (x.get() for x in values), 
         )
 
     objects = [Task(*x) for x in rawData]
-##  Tasks must be sorted by value.
-    objects.sort(key=lambda x: x.value)
+##  Tasks must be sorted by endTime
+    objects.sort(key=lambda x: x.endTime)
     return objects
 
+## This can, and probably should, be cached.
+def nextDoableTask(tasks, i):
+    "Find latest doable task before tasks[i]."
+    startingTask = tasks[i]
+    i -= 1
+    while i >= 0:
+        if tasks[i].endTime < startingTask.startTime:
+            return tasks[i], i
+        i -= 1
+    return None, None
+
+def doableFromI(tasks, i):
+    doable = [tasks[i]]
+    while i >= 0:
+        nextTask, i = nextDoableTask(tasks, i)
+        if i is None:
+            break
+        if nextTask is not None:
+            doable.insert(0, nextTask)
+
+    return doable
 
 ##  This is a stub.
-def maximizeEarnings(data):
-    print(data)
+def maximizeEarnings(tasks, i=None):
+    if i is None:
+        i = len(tasks) - 1
+
+    ways = []
+    for i in range(len(tasks) - 1, -1, -1):
+        ways.append(doableFromI(tasks, i))
+
+    values = [sum(task.value for task in w) for w in ways]
+    for w, n in zip(ways, range(0, len(ways))):
+        print("#{}, value={} : {}".format(n, ways, w))
+        print()
 
 ##  Calls functions to check entries, run the algorithm, and display output
 def submit(window):
