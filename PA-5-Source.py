@@ -292,19 +292,37 @@ def doableFromI(tasks, i):
 
     return doable
 
-##  This is a stub.
-def maximizeEarnings(tasks, i=None):
-    if i is None:
-        i = len(tasks) - 1
+##  Return maximum profit and tasks chosen to attain it.
+def maximizeEarnings(tasks):
 
-    ways = []
-    for i in range(len(tasks) - 1, -1, -1):
-        ways.append(doableFromI(tasks, i))
+    length = len(tasks)
 
-    values = [sum(task.value for task in w) for w in ways]
-    for w, n in zip(ways, range(0, len(ways))):
-        print("#{}, value={} : {}".format(n, ways, w))
-        print()
+    values = [None]*(length)
+    lastTaskChosenIndex = None
+
+    for n in range(0, len(tasks)):
+        ##print("Iteration", n)
+
+        includingCurrent = tasks[n].value
+        t, i = nextDoableTask(tasks, n)
+        if t is not None:
+            includingCurrent += values[i]
+            ##print("Found compatible task", t)
+
+        if n == 0:
+            excludingCurrent = 0
+        else:
+            excludingCurrent = values[n - 1]
+
+        if includingCurrent >= excludingCurrent:
+            ##print("Including task", tasks[n])
+            values[n] = includingCurrent
+            lastTaskChosenIndex = n
+        else:
+            ##print("Excluding task", tasks[n])
+            values[n] = excludingCurrent
+
+    return values[-1], doableFromI(tasks, lastTaskChosenIndex)
 
 ##  Calls functions to check entries, run the algorithm, and display output
 def submit(frameLeft):
@@ -313,7 +331,10 @@ def submit(frameLeft):
     displayError(frameLeft, valid, err, index)
 
     ##  Turn data into objects to make it easier to work with.
-    maximizeEarnings(inputsToObjects())
+    maxProfit, solution= maximizeEarnings(inputsToObjects())
+    print("The optimal solution is:")
+    print(solution)
+    print("Your optimal profit is", maxProfit)
 
 if __name__ == "__main__":
     main()
