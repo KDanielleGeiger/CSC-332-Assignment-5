@@ -299,59 +299,48 @@ def inputsToObjects():
     objects.sort(key=lambda x: x.endTime)
     return objects
 
-##  This can, and probably should, be cached.
 ##  Find latest doable task before tasks[i]
 def nextDoableTask(tasks, i):
     "Find latest doable task before tasks[i]."
     startingTask = tasks[i]
     i -= 1
     while i >= 0:
-        if tasks[i].endTime < startingTask.startTime:
+        if tasks[i].endTime <= startingTask.startTime:
             return tasks[i], i
         i -= 1
     return None, None
 
-def doableFromI(tasks, i):
-    doable = [tasks[i]]
-    while i >= 0:
-        nextTask, i = nextDoableTask(tasks, i)
-        if i is None:
-            break
-        if nextTask is not None:
-            doable.insert(0, nextTask)
-
-    return doable
-
-##  Return maximum profit and tasks chosen to attain it.
+##  Return optimal schedule and resulting profit.
 def maximizeEarnings(tasks):
     length = len(tasks)
 
-    values = [None]*(length)
-    lastTaskChosenIndex = None
+    values = [None]*length
+    chosenTasks = [None]*length
 
     for n in range(0, len(tasks)):
-        ##print("Iteration", n)
 
-        includingCurrent = tasks[n].value
+        profitIncludingCurrent = tasks[n].value
+        tasksIncludingCurrent = [tasks[n]]
         t, i = nextDoableTask(tasks, n)
         if t is not None:
-            includingCurrent += values[i]
-            ##print("Found compatible task", t)
+            profitIncludingCurrent += values[i]
+            tasksIncludingCurrent = chosenTasks[i] + tasksIncludingCurrent
 
         if n == 0:
-            excludingCurrent = 0
+            profitExcludingCurrent = 0
+            tasksExcludingCurrent = []
         else:
-            excludingCurrent = values[n - 1]
+            profitExcludingCurrent = values[n - 1]
+            tasksExcludingCurrent = chosenTasks[n - 1]
 
-        if includingCurrent >= excludingCurrent:
-            ##print("Including task", tasks[n])
-            values[n] = includingCurrent
-            lastTaskChosenIndex = n
+        if profitIncludingCurrent >= profitExcludingCurrent:
+            values[n] = profitIncludingCurrent
+            chosenTasks[n] = tasksIncludingCurrent
         else:
-            ##print("Excluding task", tasks[n])
-            values[n] = excludingCurrent
+            values[n] = profitExcludingCurrent
+            chosenTasks[n] = tasksExcludingCurrent
 
-    return doableFromI(tasks, lastTaskChosenIndex), values[-1]
+    return chosenTasks[n], values[-1]
 
 ##  Calls functions to check entries, run the algorithm, and display output
 def submit(frameLeft, bestPathLbl):
@@ -363,6 +352,7 @@ def submit(frameLeft, bestPathLbl):
     if valid == True:
         ##  Turn data into objects to make it easier to work with
         bestPath, maxProfit = maximizeEarnings(inputsToObjects())
+        print(maxProfit, bestPath)          ###XXX: Delete this.
 
         ##  Display output
         bestPathStr = formatBestPath(bestPath, maxProfit)
