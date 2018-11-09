@@ -44,7 +44,21 @@ def main():
 
     ##  Divider
     sep = ttk.Separator(frameMid, orient=VERTICAL)
-    sep.grid(row=0, column=0, pady=(20,20), padx=(100,100), sticky=NS)
+    sep.grid(row=0, column=0, pady=(20,20), padx=(100,50), sticky=NS)
+
+    ##  Display best path
+    bestPathLbl = StringVar()
+    bestPathLbl.set('')
+    label = Label(frameRight, textvariable=bestPathLbl, fg='blue')
+    label.grid(row=0, column=0, pady=(10,0), sticky=N)
+
+    ##  ListBox to display all possible sequences
+    listbox = Listbox(frameRight, width=80, height=15, relief=FLAT)
+    scrollbar = Scrollbar(frameRight, orient=VERTICAL)
+    listbox.config(yscrollcommand=scrollbar.set)
+    scrollbar.config(command=listbox.yview)
+    listbox.grid(row=1, column=0)
+    scrollbar.grid(row=1, column=0, sticky=E+NS)
 
     ##  Continue to display UI until user exits
     window.mainloop()
@@ -221,7 +235,7 @@ def checkEntries():
             return valid, err, index
 
         ##  Check that startTime < endTime
-        if not startTime < endTime:
+        if not int(startTime) < int(endTime):
             valid = False
             err = 'ERROR: Start Time must be less than End Time'
             return valid, err, index
@@ -242,27 +256,29 @@ def displayError(frameLeft, valid, err, index):
         errorLbl = Label(frameLeft, textvariable=errVar, fg='red')
         errorLbl.grid(row=(4*index)+2, column=1, columnspan=3)
 
+##  Represents each task as a single object
 class Task:
     "Represents each task as a single object."
-
-    def __init__(self, startTime, endTime, value):
+    def __init__(self, number, startTime, endTime, value):
         ##  This is intended to raise ValueError if these conversions fail.
         ##  DO NOT catch it here. Validate these in the UI so you can
         ##  communicate the problem to the user.
+        self.number = number
         self.startTime = int(startTime)
         self.endTime = int(endTime)
-        self.value = int(value)
-            
+        self.value = float(value)
 
     def __repr__(self):
-        return "Task(startTime={}, endTime={}, value={})".format(self.startTime, self.endTime, self.value)
+        return "Task(number={}, startTime={}, endTime={}, value={})".format(self.number, self.startTime, self.endTime, self.value)
 
+##  Convert data from UI into Task objects
 def inputsToObjects():
     "Convert data from UI into Task objects."
     rawData = zip(
+        (x for x in range(0, len(startTimes))),
         (x.get() for x in startTimes),
         (x.get() for x in endTimes),
-        (x.get() for x in values), 
+        (x.get() for x in values),
         )
 
     objects = [Task(*x) for x in rawData]
@@ -270,7 +286,8 @@ def inputsToObjects():
     objects.sort(key=lambda x: x.endTime)
     return objects
 
-## This can, and probably should, be cached.
+##  This can, and probably should, be cached.
+##  Find latest doable task before tasks[i]
 def nextDoableTask(tasks, i):
     "Find latest doable task before tasks[i]."
     startingTask = tasks[i]
@@ -294,7 +311,6 @@ def doableFromI(tasks, i):
 
 ##  Return maximum profit and tasks chosen to attain it.
 def maximizeEarnings(tasks):
-
     length = len(tasks)
 
     values = [None]*(length)
@@ -330,11 +346,13 @@ def submit(frameLeft):
     valid, err, index = checkEntries()
     displayError(frameLeft, valid, err, index)
 
-    ##  Turn data into objects to make it easier to work with.
-    maxProfit, solution= maximizeEarnings(inputsToObjects())
-    print("The optimal solution is:")
-    print(solution)
-    print("Your optimal profit is", maxProfit)
+    if valid == True:
+        ##  Turn data into objects to make it easier to work with
+        maxProfit, solution = maximizeEarnings(inputsToObjects())
+        
+        print("The optimal solution is: ")
+        print(solution)
+        print("Your optimal profit is", maxProfit)
 
 if __name__ == "__main__":
     main()
