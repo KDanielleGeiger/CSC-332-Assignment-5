@@ -57,7 +57,7 @@ def main():
 
     ##  Button to submit all input
     submitBtn = Button(frameLeft, text='Submit', cursor='hand2', width=6)
-    submitBtn.config(command=partial(submit, frameLeft, bestPathLbl))
+    submitBtn.config(command=partial(submit, frameLeft, bestPathLbl, listbox))
     submitBtn.grid(row=39, column=2, pady=(2,0), sticky=E)
 
     ##  Continue to display UI until user exits
@@ -258,7 +258,7 @@ def displayError(frameLeft, valid, err, index):
 
 ##  Format the best path for display
 def formatBestPath(bestPath, maxProfit):
-    bestPathStr = ''
+    bestPathStr = '[MAX PROFIT] '
     
     for task in bestPath:
         bestPathStr += 'Task_%s -> ' % task.number
@@ -268,9 +268,34 @@ def formatBestPath(bestPath, maxProfit):
 
     return bestPathStr
 
+##  Format the list of all paths for display
+def formatPaths(paths):
+    pathsStrList = []
+
+    count = 1
+    for path in paths:
+        profit = 0
+        pathStr = 'Option %s: ' % count
+        count += 1
+        
+        for task in path:
+            pathStr += 'Task_%s -> ' % task.number
+            profit += task.value
+
+        pathStr = pathStr[:-4]
+        pathStr += ', with a total earning of %s.' % profit
+
+        pathsStrList.append(pathStr)
+
+    return pathsStrList
+
 ##  Display the best path and the list of all possible paths
-def displayPaths(bestPathLbl, bestPathStr):
+def displayPaths(bestPathLbl, bestPathStr, listbox, pathsStrList):
     bestPathLbl.set(bestPathStr)
+
+    listbox.delete(0, END)
+    for i in pathsStrList:
+        listbox.insert(END, i)
 
 ##  Represents each task as a single object
 class Task:
@@ -343,7 +368,7 @@ def maximizeEarnings(tasks):
     return chosenTasks[n], values[-1]
 
 ##  Calls functions to check entries, run the algorithm, and display output
-def submit(frameLeft, bestPathLbl):
+def submit(frameLeft, bestPathLbl, listbox):
     ##  Check entries
     valid, err, index = checkEntries()
     displayError(frameLeft, valid, err, index)
@@ -352,11 +377,15 @@ def submit(frameLeft, bestPathLbl):
     if valid == True:
         ##  Turn data into objects to make it easier to work with
         bestPath, maxProfit = maximizeEarnings(inputsToObjects())
-        print(maxProfit, bestPath)          ###XXX: Delete this.
 
         ##  Display output
         bestPathStr = formatBestPath(bestPath, maxProfit)
-        displayPaths(bestPathLbl, bestPathStr)
+
+        ##  Test data:
+        pathsStrList = [bestPath, bestPath]
+        pathsStrList = formatPaths(pathsStrList)
+        
+        displayPaths(bestPathLbl, bestPathStr, listbox, pathsStrList)
 
 if __name__ == "__main__":
     main()
