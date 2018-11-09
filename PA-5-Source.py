@@ -47,17 +47,23 @@ def main():
     label = Label(frameRight, textvariable=bestPathLbl, fg='blue')
     label.grid(row=0, column=0, pady=(10,0), sticky=N)
 
+    ##  Display total number of path options
+    totalPathsLbl = StringVar()
+    totalPathsLbl.set('')
+    totalLabel = Label(frameRight, textvariable=totalPathsLbl, fg='gray64')
+    totalLabel.grid(row=1, column=0, pady=(10,0))
+
     ##  ListBox to display all possible sequences
-    listbox = Listbox(frameRight, width=80, height=15, relief=FLAT)
+    listbox = Listbox(frameRight, width=80, height=12, relief=FLAT)
     scrollbar = Scrollbar(frameRight, orient=VERTICAL)
     listbox.config(yscrollcommand=scrollbar.set)
     scrollbar.config(command=listbox.yview)
-    listbox.grid(row=1, column=0)
-    scrollbar.grid(row=1, column=0, sticky=E+NS)
+    listbox.grid(row=2, column=0)
+    scrollbar.grid(row=2, column=0, sticky=E+NS)
 
     ##  Button to submit all input
     submitBtn = Button(frameLeft, text='Submit', cursor='hand2', width=6)
-    submitBtn.config(command=partial(submit, frameLeft, bestPathLbl, listbox))
+    submitBtn.config(command=partial(submit, frameLeft, bestPathLbl, listbox, totalPathsLbl))
     submitBtn.grid(row=39, column=2, pady=(2,0), sticky=E)
 
     ##  Continue to display UI until user exits
@@ -79,7 +85,7 @@ def addTask(frameLeft, addTaskBtn):
 
     ##  Display new task number
     label = Label(frameLeft, textvariable=textVar, width=10)
-    label.grid(row=4*i, column=0, pady=(10,0), padx=(10,0))
+    label.grid(row=4*i, column=0, pady=(10,0))
 
     ##  Display the three entry fields for new task
     valueEntry = Entry(frameLeft, fg='light grey', relief=FLAT, width=20)
@@ -258,7 +264,7 @@ def displayError(frameLeft, valid, err, index):
 
 ##  Format the best path for display
 def formatBestPath(bestPath, maxProfit):
-    bestPathStr = '[MAX PROFIT] '
+    bestPathStr = 'MAX PROFIT: '
     
     for task in bestPath:
         bestPathStr += 'Task_%s -> ' % task.number
@@ -289,9 +295,14 @@ def formatPaths(paths):
 
     return pathsStrList
 
+def formatTotalPaths(paths):
+    totalPathsStr = 'There are %s options to select different sets of tasks.' % len(paths)
+    return totalPathsStr
+
 ##  Display the best path and the list of all possible paths
-def displayPaths(bestPathLbl, bestPathStr, listbox, pathsStrList):
+def displayPaths(bestPathLbl, bestPathStr, listbox, pathsStrList, totalPathsLbl, totalPathsStr):
     bestPathLbl.set(bestPathStr)
+    totalPathsLbl.set(totalPathsStr)
 
     listbox.delete(0, END)
     for i in pathsStrList:
@@ -368,7 +379,7 @@ def maximizeEarnings(tasks):
     return chosenTasks[n], values[-1]
 
 ##  Calls functions to check entries, run the algorithm, and display output
-def submit(frameLeft, bestPathLbl, listbox):
+def submit(frameLeft, bestPathLbl, listbox, totalPathsLbl):
     ##  Check entries
     valid, err, index = checkEntries()
     displayError(frameLeft, valid, err, index)
@@ -384,8 +395,10 @@ def submit(frameLeft, bestPathLbl, listbox):
         ##  Test data:
         pathsStrList = [bestPath, bestPath]
         pathsStrList = formatPaths(pathsStrList)
+
+        totalPathsStr = formatTotalPaths(pathsStrList)
         
-        displayPaths(bestPathLbl, bestPathStr, listbox, pathsStrList)
+        displayPaths(bestPathLbl, bestPathStr, listbox, pathsStrList, totalPathsLbl, totalPathsStr)
 
 if __name__ == "__main__":
     main()
