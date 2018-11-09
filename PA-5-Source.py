@@ -34,11 +34,6 @@ def main():
     resetBtn.config(command=partial(onReset, addTaskBtn))
     resetBtn.grid(row=39, column=2, padx=(20,0), pady=(2,0), sticky=W)
 
-    ##  Button to submit all input
-    submitBtn = Button(frameLeft, text='Submit', cursor='hand2', width=6)
-    submitBtn.config(command=partial(submit, frameLeft))
-    submitBtn.grid(row=39, column=2, pady=(2,0), sticky=E)
-
     ##  Create arrays to store Entry objects and add first task entry to UI
     addTask(frameLeft, addTaskBtn)
 
@@ -59,6 +54,11 @@ def main():
     scrollbar.config(command=listbox.yview)
     listbox.grid(row=1, column=0)
     scrollbar.grid(row=1, column=0, sticky=E+NS)
+
+    ##  Button to submit all input
+    submitBtn = Button(frameLeft, text='Submit', cursor='hand2', width=6)
+    submitBtn.config(command=partial(submit, frameLeft, bestPathLbl))
+    submitBtn.grid(row=39, column=2, pady=(2,0), sticky=E)
 
     ##  Continue to display UI until user exits
     window.mainloop()
@@ -256,13 +256,26 @@ def displayError(frameLeft, valid, err, index):
         errorLbl = Label(frameLeft, textvariable=errVar, fg='red')
         errorLbl.grid(row=(4*index)+2, column=1, columnspan=3)
 
+##  Format the best path for display
+def formatBestPath(bestPath, maxProfit):
+    bestPathStr = ''
+    
+    for task in bestPath:
+        bestPathStr += 'Task_%s -> ' % task.number
+
+    bestPathStr = bestPathStr[:-4]
+    bestPathStr += ', with a total earning of %s.' % maxProfit
+
+    return bestPathStr
+
+##  Display the best path and the list of all possible paths
+def displayPaths(bestPathLbl, bestPathStr):
+    bestPathLbl.set(bestPathStr)
+
 ##  Represents each task as a single object
 class Task:
     "Represents each task as a single object."
     def __init__(self, number, startTime, endTime, value):
-        ##  This is intended to raise ValueError if these conversions fail.
-        ##  DO NOT catch it here. Validate these in the UI so you can
-        ##  communicate the problem to the user.
         self.number = number
         self.startTime = int(startTime)
         self.endTime = int(endTime)
@@ -275,7 +288,7 @@ class Task:
 def inputsToObjects():
     "Convert data from UI into Task objects."
     rawData = zip(
-        (x for x in range(0, len(startTimes))),
+        ((x + 1) for x in range(0, len(startTimes))),
         (x.get() for x in startTimes),
         (x.get() for x in endTimes),
         (x.get() for x in values),
@@ -338,21 +351,22 @@ def maximizeEarnings(tasks):
             ##print("Excluding task", tasks[n])
             values[n] = excludingCurrent
 
-    return values[-1], doableFromI(tasks, lastTaskChosenIndex)
+    return doableFromI(tasks, lastTaskChosenIndex), values[-1]
 
 ##  Calls functions to check entries, run the algorithm, and display output
-def submit(frameLeft):
+def submit(frameLeft, bestPathLbl):
     ##  Check entries
     valid, err, index = checkEntries()
     displayError(frameLeft, valid, err, index)
 
+    ##  Execute algorithm if entries are valid
     if valid == True:
         ##  Turn data into objects to make it easier to work with
-        maxProfit, solution = maximizeEarnings(inputsToObjects())
-        
-        print("The optimal solution is: ")
-        print(solution)
-        print("Your optimal profit is", maxProfit)
+        bestPath, maxProfit = maximizeEarnings(inputsToObjects())
+
+        ##  Display output
+        bestPathStr = formatBestPath(bestPath, maxProfit)
+        displayPaths(bestPathLbl, bestPathStr)
 
 if __name__ == "__main__":
     main()
