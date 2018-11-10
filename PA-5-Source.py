@@ -1,4 +1,5 @@
 import tkinter.ttk
+import itertools
 from tkinter import *
 from functools import partial
 import matplotlib.pyplot as plot
@@ -411,6 +412,34 @@ def maximizeEarnings(tasks):
 
     return chosenTasks[n], values[-1]
 
+## Calculate the amount of overlap between two tasks.
+def overlap(a, b):
+    return min(a[1], b[1]) - max(a[0], b[0])
+
+## Calculate all possible paths without collisions.
+def calculateValidPaths(tasks, n):
+    results = []
+
+    for i in range(1, n + 1):
+        for path in list(itertools.combinations(tasks, r=i)):
+            ##  Check for collisions before adding a path.
+            valid = True
+            for a, b in itertools.combinations(path, 2):
+                collision = overlap([a.startTime, a.endTime], [b.startTime, b.endTime])
+                    
+                if collision > 0:
+                    valid = False
+                    break
+
+            ##  If the path is valid add it to the results.
+            if valid:
+                results.append(path)
+
+    ##  Remove all unnecessary subsets.
+    #results = list(filter(lambda a: not any(set(a) < set(b) for b in results), results))
+
+    return results
+
 ##  Calls functions to check entries, run the algorithm, and display output
 def submit(frameLeft, frameRight, bestPathLbl, listbox, totalPathsLbl):
     ##  Check entries
@@ -419,14 +448,15 @@ def submit(frameLeft, frameRight, bestPathLbl, listbox, totalPathsLbl):
 
     ##  Execute if entries are valid
     if valid == True:
+        tasks = inputsToObjects()
+        
         ##  Run the algorithm
-        bestPath, maxProfit = maximizeEarnings(inputsToObjects())
+        bestPath, maxProfit = maximizeEarnings(tasks)
 
         ##  Display output
-        createChart(inputsToObjects(), frameRight)
+        createChart(tasks, frameRight)
         bestPathStr = formatBestPath(bestPath, maxProfit)
-        ##  Test data:
-        pathsStrList = [bestPath, bestPath]
+        pathsStrList = calculateValidPaths(tasks, len(tasks))
         pathsStrList = formatPaths(pathsStrList)
         totalPathsStr = formatTotalPaths(pathsStrList)
         
