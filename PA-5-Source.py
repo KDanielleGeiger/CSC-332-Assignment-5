@@ -1,6 +1,8 @@
 import tkinter.ttk
 from tkinter import *
 from functools import partial
+import matplotlib.pyplot as plot
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 valueText = 'Earnings (Ex: 21.50)'
 startTimeText = 'Start Time (Int 0-11)'
@@ -61,9 +63,13 @@ def main():
     listbox.grid(row=2, column=0)
     scrollbar.grid(row=2, column=0, sticky=E+NS)
 
+    ##  Canvas for the chart
+    #canvas = FigureCanvas(frameRight, width=466, height=210, bg='white')
+    #canvas.grid(row=3, column=0, pady=(30,0), sticky=W)
+
     ##  Button to submit all input
     submitBtn = Button(frameLeft, text='Submit', cursor='hand2', width=6)
-    submitBtn.config(command=partial(submit, frameLeft, bestPathLbl, listbox, totalPathsLbl))
+    submitBtn.config(command=partial(submit, frameLeft, frameRight, bestPathLbl, listbox, totalPathsLbl))
     submitBtn.grid(row=39, column=2, pady=(2,0), sticky=E)
 
     ##  Continue to display UI until user exits
@@ -295,6 +301,7 @@ def formatPaths(paths):
 
     return pathsStrList
 
+##  Create string that says the total number of paths
 def formatTotalPaths(paths):
     totalPathsStr = 'There are %s options to select different sets of tasks.' % len(paths)
     return totalPathsStr
@@ -308,9 +315,37 @@ def displayPaths(bestPathLbl, bestPathStr, listbox, pathsStrList, totalPathsLbl,
     for i in pathsStrList:
         listbox.insert(END, i)
 
+##  Create a chart for the tasks
+def createChart(tasks, frameRight):
+    figure = plot.figure()
+    chart = figure.add_subplot(111)
+    chart.set_title("Tasks")
+
+    taskNames = [None] * (len(tasks) + 1)
+    for task in tasks:
+        taskNames[task.number - 1] = ('Task %s' % task.number)
+    
+    chart.set_xlim(left=0, right=12)
+    chart.set_ylim(bottom=0, top=len(taskNames))
+    chart.set_xticks(range(0,13,1))
+    chart.set_yticks(range(1,len(taskNames),1))
+    chart.set_yticklabels(taskNames)
+    chart.grid(color='grey', linestyle=':')
+
+    for task in tasks:
+        number = task.number
+        width = task.endTime - task.startTime
+        left = task.startTime
+
+        chart.barh(number, width, 0.5, left, align='center', edgecolor=(0.2, 0.4, 0.6, 0.6), color=(0.2, 0.4, 0.6, 0.6))
+
+    canvas = FigureCanvasTkAgg(figure, master=frameRight)
+    canvas.draw()
+    canvas.get_tk_widget().grid(row=3, column=0, pady=(30,0), sticky=W)
+    canvas.get_tk_widget().config(width=466, height=220)
+
 ##  Represents each task as a single object
 class Task:
-    "Represents each task as a single object."
     def __init__(self, number, startTime, endTime, value):
         self.number = number
         self.startTime = int(startTime)
@@ -322,7 +357,6 @@ class Task:
 
 ##  Convert data from UI into Task objects
 def inputsToObjects():
-    "Convert data from UI into Task objects."
     rawData = zip(
         ((x + 1) for x in range(0, len(startTimes))),
         (x.get() for x in startTimes),
@@ -337,7 +371,6 @@ def inputsToObjects():
 
 ##  Find latest doable task before tasks[i]
 def nextDoableTask(tasks, i):
-    "Find latest doable task before tasks[i]."
     startingTask = tasks[i]
     i -= 1
     while i >= 0:
@@ -379,23 +412,22 @@ def maximizeEarnings(tasks):
     return chosenTasks[n], values[-1]
 
 ##  Calls functions to check entries, run the algorithm, and display output
-def submit(frameLeft, bestPathLbl, listbox, totalPathsLbl):
+def submit(frameLeft, frameRight, bestPathLbl, listbox, totalPathsLbl):
     ##  Check entries
     valid, err, index = checkEntries()
     displayError(frameLeft, valid, err, index)
 
-    ##  Execute algorithm if entries are valid
+    ##  Execute if entries are valid
     if valid == True:
-        ##  Turn data into objects to make it easier to work with
+        ##  Run the algorithm
         bestPath, maxProfit = maximizeEarnings(inputsToObjects())
 
         ##  Display output
+        createChart(inputsToObjects(), frameRight)
         bestPathStr = formatBestPath(bestPath, maxProfit)
-
         ##  Test data:
         pathsStrList = [bestPath, bestPath]
         pathsStrList = formatPaths(pathsStrList)
-
         totalPathsStr = formatTotalPaths(pathsStrList)
         
         displayPaths(bestPathLbl, bestPathStr, listbox, pathsStrList, totalPathsLbl, totalPathsStr)
